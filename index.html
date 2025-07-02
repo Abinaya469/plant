@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Plant Health Detection</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-image: url('https://images.unsplash.com/photo-1524592919377-d49c7e1ca5eb'); /* Background image */
+      background-size: cover;
+      background-position: center;
+      color: #ffffff;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-top: 20px;
+    }
+    #image-preview {
+      margin: 20px auto;
+      border: 4px solid #fff;
+      width: 200px;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+    #label-container {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+    input[type="file"], button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 1em;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌿 Plant Health Checker 🌿</h1>
+  <input type="file" id="imageUpload" accept="image/*">
+  <br>
+  <img id="image-preview" src="" alt="Upload preview">
+  <br>
+  <button onclick="predict()">Predict</button>
+  <div id="label-container"></div>
+
+  <!-- TensorFlow.js and Teachable Machine -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+  <script>
+    const URL = "./my_model/"; // Replace this with your hosted model path if on a server
+    let model, imageElement;
+
+    async function loadModel() {
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+      model = await tmImage.load(modelURL, metadataURL);
+    }
+
+    document.getElementById('imageUpload').addEventListener('change', function (event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          imageElement = new Image();
+          imageElement.src = e.target.result;
+          imageElement.onload = function () {
+            document.getElementById('image-preview').src = imageElement.src;
+          };
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    async function predict() {
+      if (!model) {
+        await loadModel();
+      }
+      if (!imageElement) {
+        alert("Please upload an image first.");
+        return;
+      }
+
+      const prediction = await model.predict(imageElement);
+      const labelContainer = document.getElementById("label-container");
+      labelContainer.innerHTML = "";
+
+      prediction.forEach(p => {
+        const label = `${p.className}: ${(p.probability * 100).toFixed(2)}%`;
+        const div = document.createElement("div");
+        div.textContent = label;
+        labelContainer.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
